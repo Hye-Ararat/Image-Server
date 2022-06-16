@@ -86,7 +86,7 @@
    let cached_images = await fetchImages();
    setInterval(async () => {
       cached_images = await fetchImages();
-   }, 8000)
+   }, 15000)
    app.get('/streams/v1/images.json', async (req, res) => {
       return res.json(cached_images)
    })
@@ -114,7 +114,32 @@
          const d = new Date()
          if (!req.files["rootfs"] && req.files['kvmdisk'] && req.files['lxdmeta']) {
             var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
-            fs.mkdirSync('./path/to/my/directory', { recursive: true })
+            var zero = d.getMonth() < 10 ? "0" : ""
+            var zeroday = d.getDate() < 10 ? "0" : ""
+            var zerohours = d.getHours() < 10 ? "0" : ""
+            var zerominutes = d.getMinutes() < 10 ? "0" : ""
+            var date = `${d.getFullYear()}${zero + d.getMonth()}${zeroday + d.getDate()}_${zerohours + d.getHours() + "-" + zerominutes + d.getMinutes()}`
+            var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
+            if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
+            fs.mkdirSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}`), { recursive: true })
+            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/disk.qcow2`), req.files['kvmdisk'].data)
+            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/lxd.tar.xz`), req.files['lxdmeta'].data)
+            prisma.image.create({
+               data: {
+                  os: os,
+                  release: release,
+                  architecture: architecture,
+                  variant: variant,
+                  aliases: aliases,
+                  release_title: releasetitle,
+                  lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
+               }
+            }).then(image => {
+               res.json({
+                  success: true,
+                  data: image
+               })
+            })
          } else if (req.files['rootfs'] && req.files['rootfs'] && !req.files['kvmdisk']) {
             var zero = d.getMonth() < 10 ? "0" : ""
             var zeroday = d.getDate() < 10 ? "0" : ""
@@ -143,6 +168,8 @@
                })
             })
    
+         } else {
+            return res.json({ error: "Missing required fields" })
          }
       } catch (error) {
          console.log(error)
