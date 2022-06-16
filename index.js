@@ -9,6 +9,9 @@
    const prisma = new PrismaClient()
    const {spawn} = require('child_process')
    var cache_process = spawn('node', ['./lib/cache.js'])
+   cache_process.stdout.on('data', (data) => {
+      console.log("[cache]", data.toString())
+   })
    // default options
    app.use(fileUpload());
    app.use(express.urlencoded({ extended: true }));
@@ -33,7 +36,8 @@
   
 
    app.get('/streams/v1/images.json', async (req, res) => {
-      return res.json(require('./lib/cache.json'))
+      var data = JSON.parse(fs.readFileSync('./cache.json', 'utf8'))
+      return res.json(data)
    })
    var path = require('path');
    app.get("/storage/*", (req, res) => {
