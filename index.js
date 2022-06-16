@@ -28,8 +28,8 @@ app.get("/streams/v1/index.json", async (req, res) => {
       format: "index:1.0"
    })
 })
-app.get('/streams/v1/images.json', async (req, res) => {
-
+function fetchImages() {
+   
    const images = await prisma.image.findMany({});
    let data = {
       "content_id": "images",
@@ -80,7 +80,14 @@ app.get('/streams/v1/images.json', async (req, res) => {
          "versions": versions
       }
    }
-   return res.json(data)
+   return data;
+}
+let cached_images = fetchImages();
+setInterval(() => {
+   cached_images = fetchImages();
+}, 8000)
+app.get('/streams/v1/images.json', async (req, res) => {
+   return res.json(cached_images)
 })
 var path = require('path');
 app.get("/storage/*", (req, res) => {
@@ -104,13 +111,10 @@ app.get("/storage/*", (req, res) => {
 app.post('/images', function (req, res) {
    try {
       const d = new Date()
-      if (!req.files["rootfs"]) {
-         if (!req.files['kvmdisk']) return res.json({ error: "KVM image not present in form body" })
+      if (!req.files["rootfs"] && req.files['kvmdisk'] && req.files['lxdmeta']) {
          var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
          fs.mkdirSync('./path/to/my/directory', { recursive: true })
-      } else {
-         if (!req.files['rootfs']) return res.json({ error: "Rootfs not present in form body" })
-         if (!req.files['lxdmeta']) return res.json({ error: "LXD meta not present in form body" })
+      } else if (req.files['rootfs'] && req.files['rootfs'] && !req.files['kvmdisk']) {
          var zero = d.getMonth() < 10 ? "0" : ""
          var zeroday = d.getDate() < 10 ? "0" : ""
          var zerohours = d.getHours() < 10 ? "0" : ""
