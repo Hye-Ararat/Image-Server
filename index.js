@@ -12,6 +12,9 @@
    cache_process.stdout.on('data', (data) => {
       console.log("[cache]", data.toString())
    })
+   cache_process.stderr.on('data', (data) => {
+      console.log("[error]", data.toString())
+   })
    // default options
    app.use(fileUpload());
    app.use(express.urlencoded({ extended: true }));
