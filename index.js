@@ -38,10 +38,10 @@ app.get('/streams/v1/images.json', async (req, res) => {
       "products": {}
    }
    for (let i = 0; i < images.length; i++) {
-      const image_path_releases = __dirname + `\\storage\\${images[i].os}\\${images[i].release}\\${images[i].architecture}\\${images[i].variant}`
+      const image_path_releases = __dirname + `/storage/${images[i].os}/${images[i].release}/${images[i].architecture}/${images[i].variant}`
       let versions = {}
       fs.readdirSync(image_path_releases).forEach(version_dir => {
-         let files = fs.readdirSync(image_path_releases + "\\" + version_dir.replace(':', '-'))
+         let files = fs.readdirSync(image_path_releases + "/" + version_dir.replace(':', '-'))
          let files_list = {};
          files.forEach(file => {
             let type;
@@ -49,19 +49,19 @@ app.get('/streams/v1/images.json', async (req, res) => {
             if (file.includes("squashfs")) type = "squashfs";
             if (file.includes(".vcdiff")) type = "squashfs.vcdiff";
             if (!type) type = file;
-            console.log(image_path_releases + "\\" + version_dir.replace(':', '-') + "\\" + file)
+            console.log(image_path_releases + "/" + version_dir.replace(':', '-') + "/" + file)
             files_list[file] = {
                "ftype": type,
-               "sha256": hash.createHash(image_path_releases + "\\" + version_dir + "\\" + file),
-               "size": fs.statSync(image_path_releases + "\\" + version_dir + "\\" + file).size,
+               "sha256": hash.createHash(image_path_releases + "/" + version_dir + "/" + file),
+               "size": fs.statSync(image_path_releases + "/" + version_dir + "/" + file).size,
                "path": `storage/${images[i].os}/${images[i].release}/${images[i].architecture}/${images[i].variant}` + "/" + version_dir + "/" + file
             }
             if (type == "lxd.tar.xz") {
                console.log()
-               files_list[file].combined_sha256 = hash.createCombinedHash(image_path_releases + "\\" + version_dir.replace(':', '-') + "\\" + file, image_path_releases + "\\" + version_dir.replace(':', '-') + "\\root.tar.xz")
-               files_list[file].combined_rootxz_sha256 = hash.createCombinedHash(image_path_releases + "\\" + version_dir.replace(':', '-') + "\\" + file, image_path_releases + "\\" + version_dir.replace(':', '-') + "\\root.tar.xz")
+               files_list[file].combined_sha256 = hash.createCombinedHash(image_path_releases + "/" + version_dir.replace(':', '-') + "/" + file, image_path_releases + "/" + version_dir.replace(':', '-') + "/root.tar.xz")
+               files_list[file].combined_rootxz_sha256 = hash.createCombinedHash(image_path_releases + "/" + version_dir.replace(':', '-') + "/" + file, image_path_releases + "/" + version_dir.replace(':', '-') + "/root.tar.xz")
                if (files.find(f => f.includes(".qcow2"))) {
-                  files_list[file]["combined_disk-kvm-img_sha256"] = hash.createCombinedHash(image_path_releases + "\\" + version_dir.replace(':', '-') + "\\" + file, image_path_releases + "\\" + version_dir.replace(':', '-') + "\\disk.qcow2")
+                  files_list[file]["combined_disk-kvm-img_sha256"] = hash.createCombinedHash(image_path_releases + "/" + version_dir.replace(':', '-') + "/" + file, image_path_releases + "/" + version_dir.replace(':', '-') + "/disk.qcow2")
                }
             }
          })
@@ -85,17 +85,17 @@ app.get('/streams/v1/images.json', async (req, res) => {
 var path = require('path');
 app.get("/storage/*", (req, res) => {
    if (req.url.includes("..")) return res.status(418).send("Nice try bitch.")
-   console.log(path.normalize(req.url.toString().replace("/", "\\")))
+   console.log(path.normalize(req.url.toString().replace("/", "/")))
    if (fs.statSync("." + req.url.replace(':', '-')).isFile()) {
       if (req.path.includes('tar.xz')) {
          res.setHeader("Accept-Ranges", "Bytes")
-         res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "\\").replace(':', '-'))).size)
+         res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).size)
          res.setHeader("Content-Type", "application/x-xz")
       } else {
          res.setHeader("Accept-Ranges", "Bytes")
-         res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "\\").replace(':', '-'))).size)
+         res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).size)
       }
-      fs.createReadStream("." + path.normalize(req.url.toString().replace("/", "\\").replace(':', '-'))).pipe(res)
+      fs.createReadStream("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).pipe(res)
    } else {
       return res.status(418).send("Nice try bitch.")
    }
