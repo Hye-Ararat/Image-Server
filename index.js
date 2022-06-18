@@ -1,7 +1,9 @@
 (async () => {
+   const sanitize = require('./lib/safe')
    const express = require('express');
    const fileUpload = require('express-fileupload');
    const app = express();
+   require('dotenv').config()
    const { PrismaClient } = require("@prisma/client");
    const fs = require('fs');
    const hash = require('./lib/hash')
@@ -48,23 +50,25 @@
    var path = require('path');
    app.get("/storage/*", (req, res) => {
       if (req.url.includes("..")) return res.status(418).send("Nice try bitch.")
+      var path = sanitize(path.normalize(req.url.toString().replace("/", "/")))
       console.log(path.normalize(req.url.toString().replace("/", "/")))
-      if (fs.statSync("." + req.url.replace(':', '-')).isFile()) {
+      if (fs.statSync("." + path.replace(':', '-')).isFile()) {
          if (req.path.includes('tar.xz')) {
             res.setHeader("Accept-Ranges", "Bytes")
-            res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).size)
+            res.setHeader("Content-Length", fs.statSync("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).size)
             res.setHeader("Content-Type", "application/x-xz")
          } else {
             res.setHeader("Accept-Ranges", "Bytes")
-            res.setHeader("Content-Length", fs.statSync("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).size)
+            res.setHeader("Content-Length", fs.statSync("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).size)
          }
-         fs.createReadStream("." + path.normalize(req.url.toString().replace("/", "/").replace(':', '-'))).pipe(res)
+         fs.createReadStream("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).pipe(res)
       } else {
          return res.status(418).send("Nice try bitch.")
       }
    
    })
    app.post('/images', async function (req, res) {
+      if (req.headers.authorization !== "Bearer " + process.env.APP_KEY) return res.status(403).send("Unauthorized");
       try {
          const d = new Date()
          if (!req.files["rootfs"] && req.files['kvmdisk'] && req.files['lxdmeta']) {
