@@ -16,7 +16,10 @@
       console.log("[error]", data.toString())
    })
    // default options
-   app.use(fileUpload());
+   app.use(fileUpload({
+      useTempFiles: true,
+      tempFileDir: "./tmp"
+   }));
    app.use(express.urlencoded({ extended: true }));
    app.get("/streams/v1/index.json", async (req, res) => {
       const images = await prisma.image.findMany({});
@@ -74,8 +77,9 @@
             var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             fs.mkdirSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}`), { recursive: true })
-            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/disk.qcow2`), req.files['kvmdisk'].data)
-            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/lxd.tar.xz`), req.files['lxdmeta'].data)
+            
+            fs.renameSync(req.files['kvmdisk'].tempFilePath, path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/disk.qcow2`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath,path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/lxd.tar.xz`))
             prisma.image.create({
                data: {
                   os: os,
@@ -101,8 +105,8 @@
             var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             fs.mkdirSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}`), { recursive: true })
-            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/root.tar.xz`), req.files['rootfs'].data)
-            fs.writeFileSync(path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/lxd.tar.xz`), req.files['lxdmeta'].data)
+            fs.renameSync(req.files['rootfs'].tempFilePath,path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/root.tar.xz`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath,path.normalize(`./storage/${os}/${release}/${architecture}/${variant}/${date}/lxd.tar.xz`))
             prisma.image.create({
                data: {
                   os: os,
