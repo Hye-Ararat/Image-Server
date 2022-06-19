@@ -50,18 +50,18 @@
    var path = require('path');
    app.get("/storage/*", (req, res) => {
       if (req.url.includes("..")) return res.status(418).send("Nice try bitch.")
-      var path = sanitize(path.normalize(req.url.toString().replace("/", "/")))
+      var paths = sanitize(path.normalize(req.url.toString().replace("/", "/")))
       console.log(path.normalize(req.url.toString().replace("/", "/")))
-      if (fs.statSync("." + path.replace(':', '-')).isFile()) {
+      if (fs.statSync("." +paths.replace(':', '-')).isFile()) {
          if (req.path.includes('tar.xz')) {
             res.setHeader("Accept-Ranges", "Bytes")
-            res.setHeader("Content-Length", fs.statSync("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).size)
+            res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
             res.setHeader("Content-Type", "application/x-xz")
          } else {
             res.setHeader("Accept-Ranges", "Bytes")
-            res.setHeader("Content-Length", fs.statSync("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).size)
+            res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
          }
-         fs.createReadStream("." + path.normalize(path.toString().replace("/", "/").replace(':', '-'))).pipe(res)
+         fs.createReadStream("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).pipe(res)
       } else {
          return res.status(418).send("Nice try bitch.")
       }
