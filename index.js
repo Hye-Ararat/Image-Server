@@ -9,14 +9,18 @@
    const hash = require('./lib/hash')
    
    const prisma = new PrismaClient()
-   const {spawn} = require('child_process')
-   var cache_process = spawn('node', ['./lib/cache.js'])
-   cache_process.stdout.on('data', (data) => {
-      console.log("[cache]", data.toString())
-   })
-   cache_process.stderr.on('data', (data) => {
-      console.log("[error]", data.toString())
-   })
+   function cacheRefresh() {
+      const {spawn} = require('child_process')
+      var cache_process = spawn('node', ['./lib/cache.js'])
+      cache_process.stdout.on('data', (data) => {
+         console.log("[cache]", data.toString())
+      })
+      cache_process.stderr.on('data', (data) => {
+         console.log("[error]", data.toString())
+      })
+   }
+   cacheRefresh()
+
    // default options
    app.use(fileUpload({
       useTempFiles: true,
@@ -126,6 +130,7 @@
                   success: true,
                   data: image
                })
+               cacheRefresh()
             })
    
          } else {
