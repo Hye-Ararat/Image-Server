@@ -31,7 +31,7 @@
       const images = await prisma.image.findMany({});
       let products = [];
       for (let i = 0; i < images.length; i++) {
-         products.push(`${images[i].os}:${images[i].release}:${images[i].architecture}:${images[i].variant}`)
+         products.push(`${images[i].os.toLowerCase()}:${images[i].release.toLowerCase()}:${images[i].architecture}:${images[i].variant}`)
       }
       return res.json({
          index: {
