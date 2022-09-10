@@ -7,10 +7,10 @@
    const { PrismaClient } = require("@prisma/client");
    const fs = require('fs');
    const hash = require('./lib/hash')
-   
+
    const prisma = new PrismaClient()
    function cacheRefresh() {
-      const {spawn} = require('child_process')
+      const { spawn } = require('child_process')
       var cache_process = spawn('node', ['./lib/cache.js'])
       cache_process.stdout.on('data', (data) => {
          console.log("[cache]", data.toString())
@@ -45,18 +45,41 @@
          format: "index:1.0"
       })
    })
-  
+
 
    app.get('/streams/v1/images.json', async (req, res) => {
       var data = JSON.parse(fs.readFileSync('./cache.json', 'utf8'))
       return res.json(data)
+   })
+   app.get("/findImageId", (req, res) => {
+      let { os, release, architecture, variant } = req.query
+      os = os.toLowerCase()
+      release = release.toLowerCase()
+      architecture = architecture.toLowerCase()
+      variant = variant.toLowerCase()
+      const image = prisma.image.findFirst({
+         where: {
+            os: os,
+            release: release,
+            architecture: architecture,
+            variant: variant
+         }
+      })
+      if (image) {
+         return res.json({
+            id: image.id
+         })
+      }
+      return res.json({
+         error: "Image not found"
+      })
    })
    var path = require('path');
    app.get("/storage/*", (req, res) => {
       if (req.url.includes("..")) return res.status(418).send("Nice try bitch.")
       var paths = sanitize(path.normalize(req.url.toString().replace("/", "/")))
       console.log(path.normalize(req.url.toString().replace("/", "/")))
-      if (fs.statSync("." +paths.replace(':', '-')).isFile()) {
+      if (fs.statSync("." + paths.replace(':', '-')).isFile()) {
          if (req.path.includes('tar.xz')) {
             res.setHeader("Accept-Ranges", "Bytes")
             res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
@@ -69,7 +92,7 @@
       } else {
          return res.status(418).send("Nice try bitch.")
       }
-   
+
    })
    app.post('/images', async function (req, res) {
       if (req.headers.authorization !== "Bearer " + process.env.APP_KEY) return res.status(403).send("Unauthorized");
@@ -86,34 +109,34 @@
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}`), { recursive: true })
-            
+
             fs.renameSync(req.files['kvmdisk'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/disk.qcow2`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath,path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
             if (!alrExisted) {
-            prisma.image.create({
-               data: {
-                  os: os,
-                  release: release,
-                  architecture: architecture,
-                  variant: variant,
-                  aliases: aliases,
-                  release_title: releasetitle,
-                  lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
-               }
-            }).then(image => {
+               prisma.image.create({
+                  data: {
+                     os: os,
+                     release: release,
+                     architecture: architecture,
+                     variant: variant,
+                     aliases: aliases,
+                     release_title: releasetitle,
+                     lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
+                  }
+               }).then(image => {
+                  res.json({
+                     success: true,
+                     data: image
+                  })
+                  cacheRefresh()
+               })
+            } else {
                res.json({
                   success: true,
-                  data: image
+                  data: "Image already existed"
                })
                cacheRefresh()
-            })
-         } else {
-            res.json({
-               success: true,
-               data: "Image already existed"
-            })
-            cacheRefresh()
-         }
+            }
          } else if (req.files['rootfs'] && req.files['rootfs'] && !req.files['kvmdisk']) {
             var zero = d.getMonth() < 10 ? "0" : ""
             var zeroday = d.getDate() < 10 ? "0" : ""
@@ -124,34 +147,34 @@
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}`), { recursive: true })
-            fs.renameSync(req.files['rootfs'].tempFilePath,path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.xz`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath,path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
+            fs.renameSync(req.files['rootfs'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.xz`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
             if (!alrExisted) {
-            prisma.image.create({
-               data: {
-                  os: os,
-                  release: release,
-                  architecture: architecture,
-                  variant: variant,
-                  aliases: aliases,
-                  release_title: releasetitle,
-                  lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
-               }
-            }).then(image => {
+               prisma.image.create({
+                  data: {
+                     os: os,
+                     release: release,
+                     architecture: architecture,
+                     variant: variant,
+                     aliases: aliases,
+                     release_title: releasetitle,
+                     lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
+                  }
+               }).then(image => {
+                  res.json({
+                     success: true,
+                     data: image
+                  })
+                  cacheRefresh()
+               })
+            } else {
                res.json({
                   success: true,
-                  data: image
+                  data: "Image already existed"
                })
                cacheRefresh()
-            })
-         } else {
-            res.json({
-               success: true,
-               data: "Image already existed"
-            })
-            cacheRefresh()
-         }
-   
+            }
+
          } else {
             return res.json({ error: "Missing required fields" })
          }
@@ -163,7 +186,7 @@
          })
       }
    });
-   
+
    app.listen(3002)
-   
+
 })();
