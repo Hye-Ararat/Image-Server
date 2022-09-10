@@ -74,6 +74,23 @@
          error: "Image not found"
       })
    })
+   app.get("/image/:id/extension/:extension", async (req, res) => {
+      let extension = sanitize(req.params.extension)
+      let id = sanitize(req.params.id)
+      const image = await prisma.image.findFirst({
+         where: {
+            id: id
+         }
+      })
+      if (image) {
+         let file = fs.readFileSync(`./storage/${image.os.toLowerCase()}/${image.release.toLowerCase()}/extensions/${extension}.extension.js`, 'utf8')
+         return res.send(file)
+      } else {
+         return res.json({
+            error: "Image not found"
+         })
+      }
+   })
    var path = require('path');
    app.get("/storage/*", (req, res) => {
       if (req.url.includes("..")) return res.status(418).send("Nice try bitch.")
@@ -109,6 +126,7 @@
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}`), { recursive: true })
+            fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/extensions`), { recursive: true })
 
             fs.renameSync(req.files['kvmdisk'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/disk.qcow2`))
             fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
