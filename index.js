@@ -233,10 +233,10 @@
       var paths = sanitize(path.normalize(req.url.toString().replace("/", "/")))
       console.log(path.normalize(req.url.toString().replace("/", "/")))
       if (fs.statSync("." + paths.replace(':', '-')).isFile()) {
-         if (req.path.includes('tar.xz')) {
+         if (req.path.includes('tar.gz')) {
             res.setHeader("Accept-Ranges", "Bytes")
             res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
-            res.setHeader("Content-Type", "application/x-xz")
+            res.setHeader("Content-Type", "application/tar+gzip")
          } else {
             res.setHeader("Accept-Ranges", "Bytes")
             res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
@@ -265,7 +265,7 @@
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/extensions`), { recursive: true })
 
             fs.renameSync(req.files['kvmdisk'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/disk.qcow2`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.gz`))
             /*Properties example
             {
                "environment": [{"key": "key", "value": "value"}],
@@ -309,8 +309,8 @@
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}`), { recursive: true })
-            fs.renameSync(req.files['rootfs'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.xz`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.xz`))
+            fs.renameSync(req.files['rootfs'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.gz`))
+            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.gz`))
             if (!alrExisted) {
                prisma.image.create({
                   data: {
