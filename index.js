@@ -233,7 +233,7 @@
       var paths = sanitize(path.normalize(req.url.toString().replace("/", "/")))
       console.log(path.normalize(req.url.toString().replace("/", "/")))
       if (fs.statSync("." + paths.replace(':', '-')).isFile()) {
-         if (req.path.includes('tar.gz')) {
+         if (req.path.includes('tar.xz')) {
             res.setHeader("Accept-Ranges", "Bytes")
             res.setHeader("Content-Length", fs.statSync("." + path.normalize(paths.toString().replace("/", "/").replace(':', '-'))).size)
             res.setHeader("Content-Type", "application/tar+gzip")
@@ -251,7 +251,7 @@
       if (req.headers.authorization !== "Bearer " + process.env.APP_KEY) return res.status(403).send("Unauthorized");
       try {
          const d = new Date()
-         if (!req.files["rootfs"] && req.files['kvmdisk'] && req.files['lxdmeta']) {
+         if (!req.files["rootfs"] && req.files['kvmdisk'] && req.files['incusmeta']) {
             var { aliases, os, release, releasetitle, variant, architecture, requirements } = req.body
             var zero = d.getMonth() < 10 ? "0" : ""
             var zeroday = d.getDate() < 10 ? "0" : ""
@@ -265,7 +265,7 @@
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/extensions`), { recursive: true })
 
             fs.renameSync(req.files['kvmdisk'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/disk.qcow2`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.gz`))
+            fs.renameSync(req.files['incusmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/incus.tar.xs`))
             /*Properties example
             {
                "environment": [{"key": "key", "value": "value"}],
@@ -282,7 +282,7 @@
                      variant: variant.toLowerCase(),
                      aliases: aliases.toLowerCase(),
                      release_title: releasetitle.toLowerCase(),
-                     lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
+                     requirements: requirements ? JSON.stringify(requirements) : '{ }',
                      properties: properties ? JSON.stringify(properties) : '{ }',
                   }
                }).then(image => {
@@ -309,8 +309,8 @@
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
             fs.mkdirSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}`), { recursive: true })
-            fs.renameSync(req.files['rootfs'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.gz`))
-            fs.renameSync(req.files['lxdmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/lxd.tar.gz`))
+            fs.renameSync(req.files['rootfs'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/root.tar.xz`))
+            fs.renameSync(req.files['incusmeta'].tempFilePath, path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}/${date}/incus.tar.xz`))
             if (!alrExisted) {
                prisma.image.create({
                   data: {
@@ -320,7 +320,7 @@
                      variant: variant,
                      aliases: aliases,
                      release_title: releasetitle,
-                     lxd_requirements: requirements ? JSON.stringify(requirements) : '{ }',
+                     requirements: requirements ? JSON.stringify(requirements) : '{ }',
                      properties: properties ? JSON.stringify(properties) : '{ }',
                   }
                }).then(image => {
@@ -350,6 +350,8 @@
       }
    });
 
-   app.listen(3002)
+   app.listen(3002, undefined, () =>{
+      console.log("Hye Ararat Image Server is running on port 3002")
+   })
 
 })();

@@ -18,6 +18,6 @@ model Image {
   release_title String
   variant String
   architecture String
-  lxd_requirements String
+  requirements String
   properties String?
 }
