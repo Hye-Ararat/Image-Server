@@ -257,7 +257,7 @@
             var zeroday = d.getDate() < 10 ? "0" : ""
             var zerohours = d.getHours() < 10 ? "0" : ""
             var zerominutes = d.getMinutes() < 10 ? "0" : ""
-            var date = `${d.getFullYear()}${zero + d.getMonth()}${zeroday + d.getDate()}_${zerohours + d.getHours() + "-" + zerominutes + d.getMinutes()}`
+            var date = `${d.getFullYear()}${zero + d.getMonth() + 1}${zeroday + d.getDate()}_${zerohours + d.getHours() + "-" + zerominutes + d.getMinutes()}`
             var { aliases, os, release, releasetitle, variant, architecture, requirements, properties } = req.body
             if (!aliases || !os || !release || !releasetitle || !variant || !architecture) return res.json({ error: "Missing required fields" })
             let alrExisted = fs.existsSync(path.normalize(`./storage/${os.toLowerCase()}/${release.toLowerCase()}/${architecture}/${variant}`))
